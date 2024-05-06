@@ -1,0 +1,438 @@
+Note: The top 10 departments by GPA are highlighted in green and the bottom 10 departments are highlighted in red. You should hover over points to read more about the department's information! Dashed line indicates average gpa between all departments.
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <!-- Load d3.js -->
+    <script src="https://d3js.org/d3.v6.js"></script>
+    <input type="range" id="xAxisSlider" min="0" max="190" value="190" step="1">
+    <style>
+        svg {
+        background-color: rgb(236, 240, 250);
+    }
+
+    /* Add other existing styles */
+    .bubbles {
+        stroke-width: 2px;
+        stroke: white;
+    }
+        .bubbles {
+            stroke-width: 2px;
+            stroke: white;
+        }
+
+        .bubbles:hover {
+            stroke: rgb(214, 255, 49);
+        }
+
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 5px;
+            font: 12px sans-serif;
+            background: black;
+            color: white;
+            border-radius: 5px;
+            pointer-events: none;
+        }
+
+        .legend-text {
+            font-size: 10px;
+        }
+
+        .grid line {
+            stroke: lightgrey;
+            stroke-opacity: 0.7;
+            shape-rendering: crispEdges;
+        }
+
+        .grid path {
+            stroke-width: 0;
+        }
+        #xAxisSlider {
+    width: 80%;
+    margin: 10px auto;
+    display: block;
+}
+    </style>
+</head>
+
+<body style="margin: 0;">
+    <div id="title" style="text-align: center; font-size: 25px; font-family: serif; margin: 5px;">Scatter Plot of Dartmouth Departments Based on GPA and Enrollments</div>
+    <!-- Create a div where the graph will take place -->
+    <div id="my_dataviz"></div>
+    
+
+    <script>
+        // Get the slider element
+const slider = document.getElementById("xAxisSlider");
+
+// Function to handle slider change
+function handleSliderChange() {
+    // Get the slider value
+    const sliderValue = +slider.value;
+    
+    // Update the x-axis domain
+    x.domain([0, sliderValue]);
+    
+    // Update the x-axis
+    xAxis.scale(x);
+    svg.select(".x-axis")
+        .transition()
+        .duration(1000)
+        .call(xAxis);
+}
+
+// Add event listener to the slider
+slider.addEventListener("input", handleSliderChange);
+        // set the dimensions and margins of the graph
+        const margin = { top: 20, right: 200, bottom: 50, left: 50 },
+            originalWidth = window.innerWidth - margin.left - margin.right,
+            originalHeight = window.innerHeight - margin.top - margin.bottom;
+
+        const width = originalWidth * 0.99; // Makes 1% smaller
+        const height = originalHeight * 0.85; // Make 15% smaller
+
+        // append the svg object to the body of the page
+        const svg = d3.select("#my_dataviz")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Read the data
+        d3.csv("d_courses.csv").then(function (data) {
+            // Filter out rows with blank data or 'NA' values
+            data = data.filter(d => d.Enrollments !== "" && d['Median GPA Points'] !== "" && d.Enrollments !== "NA" && d['Median GPA Points'] !== "NA" && d.Department !== "");
+
+            // Group data by department
+            const groupedData = Array.from(d3.group(data, d => d.Department).values());
+            /// IMPORTANT 
+            // Calculate average values for Median GPA Points and Enrollments based on departments
+            const averagedData = groupedData.map(group => {
+                const avgEnrollments = d3.mean(group, d => +d.Enrollments);
+                const avgMedianGPA = d3.mean(group, d => +d['Median GPA Points']);
+                return {
+                    Department: group[0].Department, //  from department column
+                    Enrollments: avgEnrollments,
+                    'Median GPA Points': avgMedianGPA,
+                    Year: group[0].Year // Adds the Year from the first entry in the group
+                };
+            });
+
+            console.log(groupedData)
+
+            // Sorts the data by Median GPA Points
+            averagedData.sort((a, b) => a['Median GPA Points'] - b['Median GPA Points']);
+
+            // Gets the top 10 and bottom 10 Departments
+            const top10 = averagedData.slice(-10);
+            const bottom10 = averagedData.slice(0, 10);
+
+
+// Read the data
+d3.csv("final.csv").then(function (data) {
+    // Group data by first four letters of department code (Code)
+    const groupedByCode = d3.group(data, d => d.Code.substring(0, 4));
+
+    // Calculate the average workload per group
+    const averagedWorkload = [];
+    const combinedData = [];
+
+    groupedByCode.forEach((value, key) => {
+        const avgWorkload = d3.mean(value, d => +d.Workload);
+        const avgGPA = d3.mean(value, d => +d['Median GPA Points']);
+        const totalEnrollments = d3.sum(value, d => +d.Enrollments);
+
+        // Push the averaged workload to the array
+        averagedWorkload.push({ Code: key, AvgWorkload: avgWorkload });
+
+        // Push combined data for each department
+        value.forEach(d => {
+            combinedData.push({
+                ...d,
+                AvgWorkload: avgWorkload,
+                AvgGPA: avgGPA,
+                TotalEnrollments: totalEnrollments
+            });
+        });
+    });
+
+    // Log the averaged workload data to console
+    console.log("Averaged Workload per Group:");
+    console.table(averagedWorkload);
+
+    // Log the combined data to console
+    console.log("Combined Data:");
+    console.table(combinedData);
+
+    // Add circles to represent average workload over existing squares
+    svg.selectAll("circle")
+        .data(combinedData)
+        .enter()
+        .append("circle")
+        .attr("cx", d => x(+d.Workload)) // x-coordinate based on original workload
+        .attr("cy", d => y(+d['Median GPA Points'])) // y-coordinate based on original median GPA
+        .attr("r", d => d.AvgWorkload / 10) // radius based on average workload
+        .style("fill", "none") // set circle fill color
+        .style("stroke", "black") // set circle border color
+        .style("stroke-width", 2); // set circle border width
+});
+
+            // Add X axis
+            const x = d3.scaleLinear()
+                .domain([0, 190])
+                .range([0, width]);
+
+            svg.append("g")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(x));
+
+            // Add Y axis
+            const y = d3.scaleLinear()
+                .domain([3, 4.1]) // i'll make the range for Median GPA Points go from 0 to 4
+                .range([height, 0]);
+
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            // Add grid lines
+            svg.append("g")
+                .attr("class", "grid")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x)
+                    .tickSize(-height)
+                    .tickFormat("")
+                );
+
+            svg.append("g")
+                .attr("class", "grid")
+                .call(d3.axisLeft(y)
+                    .tickSize(-width)
+                    .tickFormat("")
+                );
+                   // Add labels for the axes
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("transform", `translate(${width / 2},${height + margin.bottom - 10})`)
+                .text("Number of Enrollments");
+
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("transform", `rotate(-90) translate(${-height / 2},${-margin.left + 20})`)
+                .text("GPA");
+                // Calculate the overall average GPA
+const overallAvgGPA = d3.mean(averagedData, d => +d['Median GPA Points']);
+
+// Add a dashed line for the overall average median GPA
+svg.append("line")
+    .attr("x1", 0)
+    .attr("y1", y(overallAvgGPA))
+    .attr("x2", width)
+    .attr("y2", y(overallAvgGPA))
+    .attr("stroke-dasharray", "5, 5")
+    .attr("stroke", "black")
+    .attr("stroke", "	#C04000") 
+    .attr("stroke-width", 2);
+    
+    // Define categories based on subject areas
+const categories = {
+    Humanities: ['GRK', 'MALS', 'THEA', 'SART', 'FRIT', 'CRWT', 'MUS', 'FILM', 'JWST', 'PHIL', 'ASCL', 'AAAS', 'ENGL', 'REL', 'LACS', 'ARTH', 'LING', 'ENGS', 'MES', 'HIST', 'ENVS', 'CLST'],
+    SocialSciences: ['COGS', 'PSYC', 'GOVT', 'SOC', , 'SOC','PBPL', 'EDUC', 'ECON', 'GEOG', 'WGSS', 'ANTH'],
+    ScienceMath: ['CHEM', 'BIOL', 'PHYS', 'ASTR', 'MATH', 'COSC', 'EARS', 'QSS'],
+    Languages: ['CHIN', 'ITAL', 'SPAN', 'RUSS', 'LATS',  'GERM', 'LAT', 'FREN'],
+    Interdisciplinary: ['WRIT', 'NAS', 'TUCK', 'COGS', 'PBPL', 'INTS']
+};
+
+// Define colors for each category
+const categoryColors = {
+    Humanities: 'green',
+    SocialSciences: 'red',
+    ScienceMath: 'blue',
+    Languages: 'purple',
+    Interdisciplinary: 'orange'
+};
+
+// Function to get category based on department
+function getCategory(department) {
+    for (const [category, departments] of Object.entries(categories)) {
+        if (departments.includes(department)) {
+            return category;
+        }
+    }
+    return 'Other'; // Default category if department not found
+}
+
+
+            // -1- Create a tooltip div that is hidden by default:
+            const tooltip = d3.select("#my_dataviz")
+                .append("div")
+                .style("opacity", 0)
+                .attr("class", "tooltip")
+                .style("background-color", "black")
+                .style("border-radius", "5px")
+                .style("padding", "10px")
+                .style("color", "white")
+                .style("font-size", "14px"); // Increase font size
+
+            // -2- Create 3 functions to show / update / hide the tooltip
+            const showTooltip = function (event, d) {
+                tooltip
+                    .transition()
+                    .duration(200)
+                    .style("opacity", 1)
+                    .style("left", (event.x + 30) + "px")
+                    .style("top", (event.y + 30) + "px");
+            };
+            const moveTooltip = function (event, d) {
+                tooltip
+                    .html(`Department: ${d.Department}<br>Enrollments: ${d.Enrollments}<br>Median GPA Points: ${d['Median GPA Points']}<br>Year: ${d.Year}`)
+                    .style("left", (event.x + 30) + "px")
+                    .style("top", (event.y + 30) + "px");
+            };
+            const hideTooltip = function () {
+                tooltip
+                    .transition()
+                    .duration(200)
+                    .style("opacity", 0);
+            };
+
+            svg.append('g')
+
+  // Function to highlight squares of the same color and dull others
+function highlightSquares(color) {
+    // Reduce opacity for all squares
+    svg.selectAll("rect")
+        .style("opacity", 0.1);
+
+    // Highlight squares of the same color
+    svg.selectAll("rect")
+        .filter(d => categoryColors[getCategory(d.Department)] === color)
+        .style("opacity", 1);
+}
+
+// Add squares with size based on Enrollments and color them teal.
+svg.append('g')
+    .selectAll("rect")
+    .data(averagedData)
+    .join("rect")
+    .attr("class", "bubbles")
+    .attr("x", d => x(+d.Enrollments) - Math.sqrt(d.Enrollments) * 0.9) // Adjust position for squares
+    .attr("y", d => y(+d['Median GPA Points']) - Math.sqrt(d.Enrollments) * 0.9) // Adjust position for squares
+    .attr("width", d => Math.sqrt(d.Enrollments) * 2.6) // Adjust the size based on Enrollments
+    .attr("height", d => Math.sqrt(d.Enrollments) * 2.6) // Adjust the size based on Enrollments
+    .style("fill", d => categoryColors[getCategory(d.Department)]) // Color based on category
+    .style("stroke", d => {
+        // Check if the department is in the top or bottom 10
+        if (top10.map(dep => dep.Department).includes(d.Department)) {
+            return "#39FF14"; // Green outline for top 10
+        } else if (bottom10.map(dep => dep.Department).includes(d.Department)) {
+            return "#980000"; // Red outline for bottom 10
+        } else {
+            return "black"; // Default black outline
+        }
+    })
+    .style("opacity", 0.7) // Set initial opacity to 0.7
+    .on("mouseover", function (event, d) {
+        // Set a timer to highlight squares of the same color after 3 seconds
+        const color = categoryColors[getCategory(d.Department)];
+        setTimeout(() => highlightSquares(color), 700);
+        showTooltip(event, d);
+    })
+    .on("mousemove", moveTooltip)
+    .on("mouseleave", function () {
+    // Reset opacity for all squares
+    svg.selectAll("rect")
+        .style("opacity", d => {
+            // Restore opacity based on whether the department is in the top or bottom 10
+            const department = d.Department;
+            if (top10.map(dep => dep.Department).includes(department)) {
+                return 0.7;
+            } else if (bottom10.map(dep => dep.Department).includes(department)) {
+                return 0.7;
+            } else {
+                return 0.7;
+            }
+        });
+    hideTooltip();
+});
+
+    // Calculate the average class size based on Enrollments
+const avgClassSize = d3.mean(averagedData, d => +d.Enrollments);
+
+// Append a vertical dashed line for the average class size
+svg.append("line")
+    .attr("x1", x(avgClassSize))
+    .attr("y1", 0)
+    .attr("x2", x(avgClassSize))
+    .attr("y2", height)
+    .attr("stroke-dasharray", "5, 5")
+    .attr("stroke", "brown")
+    .attr("stroke-width", 2);
+
+            // Calculate the height of the legend based on the number of departments
+            const legendHeight = averagedData.length * 15;
+            // Add legend
+            const legend = svg.append("g")
+                .attr("transform", `translate(${width + 20}, ${margin.top})`);
+
+            const legendScaleFactor = 0.5; // Reduce the size by 50%
+            legend.selectAll("rect")
+                .data(averagedData.map(d => d.Department).reverse()) // Reverse the legend data
+                .enter()
+                .append("rect")
+                .attr("x", 5)
+                .attr("y", (d, i) => i * 10)
+                .attr("width", 10)
+                .attr("height", 15)
+                .style("fill", (d) => {
+                    // Color based on whether it's in the top 10, bottom 10, or neither
+                    if (top10.map(dep => dep.Department).includes(d)) {
+                        return "#5BDB44";
+                    } else if (bottom10.map(dep => dep.Department).includes(d)) {
+                        return "#980000";
+                    } else {
+                        return "darkbrown";
+                    }
+                });
+
+            legend.append("text")
+                .attr("x", 0)
+                .attr("y", -5)
+                .attr("text-anchor", "start")
+                .style("font-size", "12px")
+                .style("font-weight", "bold")
+                .text("Dartmouth Courses");
+                
+            legend.selectAll("text")
+                .data(averagedData.map(d => d.Department).reverse()) // Reverse the legend data
+                .enter()
+                .append("text")
+                .attr("x", 20)
+                .attr("y", (d, i) => i * 10 + 10)
+                .text(d => d)
+                .attr("text-anchor", "start")
+                .style("alignment-baseline", "middle");
+        });
+        // Function to handle slider change
+        function handleSliderChange() {
+    const sliderValue = +slider.value;
+    const newXDomain = [0, originalXDomain[1] * (sliderValue / 100)];
+    x.domain(newXDomain);
+    xAxis.scale(x);
+    svg.select(".x-axis")
+        .transition()
+        .duration(10)
+        .call(xAxis);
+}
+
+// Add event listener to the slider
+slider.addEventListener("input", handleSliderChange);
+        
+    </script>
+
+</body>
+
+</html>
