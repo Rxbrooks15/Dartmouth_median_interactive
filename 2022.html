@@ -1,0 +1,612 @@
+
+Note: The top 10 departments by GPA are highlighted in green and the bottom 10 departments are highlighted in red. You should hover over points to read more about the department's information! Horizontal dashed line indicates average gpa between all departments while the vertical dashed line depicts the average enrollment per department.
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <!-- Load d3.js -->
+    <script src="https://d3js.org/d3.v6.js"></script>
+    <script src="drop_down.js"></script>
+    <script src="radio.js"></script>
+
+    <form id="form" class="btn-group btn-group-toggle" data-toggle="buttons">
+        <label class="btn btn-secondary active">
+          <input type="radio" name="controlHeatmapType" value="MRR" checked>2021<br>
+        </label>
+        <label class="btn btn-secondary">
+          <input type="radio" name="controlHeatmapType" value="LYL">2022<br>
+        </label>
+        <label class="btn btn-third">
+          <input type="radio" name="controlHeatmapType" value="LYY">All<br>
+        </label>
+      </form>
+    <style>
+        svg {
+            background-color: rgb(236, 240, 250);
+        }
+
+        /* Add other existing styles */
+        .bubbles {
+            stroke-width: 2px;
+            stroke: white;
+        }
+
+        .bubbles:hover {
+            stroke: rgb(214, 255, 49);
+        }
+
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            padding: 5px;
+            font: 12px sans-serif;
+            background: black;
+            color: white;
+            border-radius: 5px;
+            pointer-events: none;
+        }
+
+        .legend-text {
+            font-size: 10px;
+        }
+
+        .grid line {
+            stroke: lightgrey;
+            stroke-opacity: 0.7;
+            shape-rendering: crispEdges;
+        }
+
+        .grid path {
+            stroke-width: 0;
+        }
+
+        #xAxisSlider {
+            width: 80%;
+            margin: 10px auto;
+            display: block;
+        }
+
+        /* Styles for the switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 30px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 10;
+            left: 0;
+            right: 7;
+            bottom: 0;
+            background-color: red; /* Default background color */
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4CAF50; /* Green background when switched on */
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px); /* Move the slider handle to the right when switched on */
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #4CAF50; /* Green shadow when focused */
+        }
+
+        /* Set background color to red when slider is unchecked */
+        input:not(:checked) + .slider {
+            background-color: red;
+        }
+        /*#my_dataviz {
+        margin: 200px 100px; /* Adjust the margin values as needed */
+           /* Styles for the dropdown container */
+  #dropdown-container {
+    margin: 20px;
+  }
+
+  /* Styles for the dropdown menu */
+  #d3-dropdown {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  /* Styles for the selected dropdown text */
+  #selected-dropdown {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+    </style>
+    
+  </style>
+</head>
+<body>
+  <div id="dropdown-container">
+    <select id="d3-dropdown" class="dropdown" data-target="dropdown-selected.html">
+      <option value="Button1" data-target="term1.html" class="dropdown-option">GPA and Enrollments Per Term</option>
+      <option value="Button6" data-target="term1.html" class="dropdown-option">Overall GPA and Enrollments</option>
+      <option value="Button2" data-target="term1.html" class="dropdown-option">GPA and Enrollments in Fall</option>
+      <option value="Button3" data-target="term2.html" class="dropdown-option">GPA and Enrollments in Winter</option>
+      <option value="Button4" data-target="term3.html" class="dropdown-option">GPA and Enrollments in Spring</option>
+      <option value="Button5" data-target="term4.html" class="dropdown-option">GPA and Enrollments in Summer</option>
+
+    </select>
+    <p id="selected-dropdown"></p>
+    
+    </style>
+</head>
+
+<body style="margin: 0;">
+  <!-- Include the search.js file -->
+  <script src="search.js"></script>
+        <script src="search.js"></script>
+    <div id="title" style="text-align: center; font-size: 25px; font-family: serif; margin: 5px;">Scatter Plot of Dartmouth GPA and Enrollments in 2022</div>
+<!-- Search bar -->
+
+    <!-- Radio button container -->
+    Department Quality Rating
+    <label class="switch">
+        <input type="checkbox" id="toggleSwitch">
+        <span class="slider round" id="slider"></span>
+    </label>
+
+    <!-- Where the graph will take place -->
+    <div id="my_dataviz">
+
+
+        <!-- Radio button: one choice only -->
+
+    </div>
+
+    <script>
+ 
+
+        const margin = { top: 20, right: 200, bottom: 50, left: 50 },
+            originalWidth = window.innerWidth - margin.left - margin.right,
+            originalHeight = window.innerHeight - margin.top - margin.bottom;
+
+        const width = originalWidth * 0.99; // Makes 1% smaller
+        const height = originalHeight * 0.85; // Make 15% smaller
+
+        // append the svg object to the body of the page
+        const svg = d3.select("#my_dataviz")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+            // Add X axis
+        const x = d3.scaleLinear()
+            .domain([0, 220])
+            .range([0, width]);
+
+        // Read the data
+        d3.csv("d_courses.csv").then(function (data) {
+            // Filter out rows with blank data or 'NA' values
+            data = data.filter(d => d.Enrollments !== "" && d['Median GPA Points'] !== "" && d.Enrollments !== "NA" && d['Median GPA Points'] !== "NA" && d.Department !== "" &&+d.Year === 2022);
+
+            // Group data by department
+            const groupedData = Array.from(d3.group(data, d => d.Department).values());
+            /// IMPORTANT///
+            // Calculate average values for Median GPA Points and Enrollments based on departments
+            const averagedData = groupedData.map(group => {
+                const avgEnrollments = d3.mean(group, d => +d.Enrollments);
+                const avgMedianGPA = d3.mean(group, d => +d['Median GPA Points']);
+                return {
+            Department: group[0].Department, // from department column
+            Enrollments: +avgEnrollments.toFixed(3), // Round to first decimal place
+            'Median GPA Points': +avgMedianGPA.toFixed(3), // Round to first decimal place
+            Year: group[0].Year // Adds the Year from the first entry in the group
+        };
+            });
+
+            console.log(groupedData)
+
+            // Sorts the data by Median GPA Points
+            averagedData.sort((a, b) => a['Median GPA Points'] - b['Median GPA Points']);
+
+            // Gets the top 10 and bottom 10 Departments
+            const top10 = averagedData.slice(-10);
+            const bottom10 = averagedData.slice(0, 10);
+// Read the final dataset
+d3.csv("final.csv").then(function (finalData) {
+    // Group the final data by department
+    const finalGroupedData = Array.from(d3.group(finalData, d => d.Code).values()); // Use "Code" instead of "Department"
+
+    // Calculate average quality for each department
+    const avgQualityPerDepartment = finalGroupedData.map(group => {
+        const quality = d3.mean(group, d => +d.Workload);
+        return {
+            Code: group[0].Code, // Use "Code" instead of "Department"
+            Quality: quality.toFixed(3)
+        };
+    });
+
+    // Merge the average workload data with the averagedData
+    averagedData.forEach(d => {
+        const workloadData = avgQualityPerDepartment.find(w => w.Code === d.Department); // Use "Department" instead of "Code"
+        if (workloadData) {
+            d.Quality = workloadData.Quality;
+        }
+    });
+    
+// Log the data with Quality to the console
+console.log("Data with Avg Quality:", averagedData);
+
+    // Add circles for workload
+    svg.append('g')
+        .selectAll("circle")
+        .data(averagedData)
+        .enter()
+        .append("circle")
+        .attr("class", "circle-quality")
+        .attr("cx", d => x(+d.Enrollments + 0.48)) // x-coordinate based on Enrollments
+        .attr("cy", d => y(+d['Median GPA Points']) + 3) // y-coordinate based on Median GPA Points
+        .attr("r", d => Math.sqrt(d.Quality) * 7) // radius based on Quality from scraped data
+        .style("fill", "none") // set circle fill color to none
+        .style("stroke", "black") // set circle border color
+        .style("stroke-width", 1); // set circle border width
+});
+// Initialize count variable
+let toggleCount = 1;
+
+// Function to remove circles
+function removeCircles() {
+    svg.selectAll(".circle-quality").remove();
+}
+
+// Function to create circles
+function createCircles() {
+    // Add circles for quality 
+    svg.append('g')
+        .selectAll("circle")
+        .data(averagedData)
+        .enter()
+        .append("circle")
+        .attr("class", "circle-quality")
+        .attr("cx", d => x(+d.Enrollments + 0.48)) // x-coordinate based on Enrollments
+        .attr("cy", d => y(+d['Median GPA Points']) + 3) // y-coordinate based on Median GPA Points
+        .attr("r", d => Math.sqrt(d.Quality) * 6) // radius based on AvgWorkload
+        .style("fill", "none") // set circle fill color to none
+        .style("stroke", "black") // set circle border color
+        .style("stroke-width", 1); // set circle border width
+}
+
+// Toggle switch event listener (used for quality toggle feature)
+const toggleSwitch = document.getElementById('toggleSwitch');
+toggleSwitch.addEventListener('change', function () {
+    // Increment toggle count
+    toggleCount++;
+
+    // Check if the switch is checked
+    if (toggleSwitch.checked) {
+        console.log(true); // Print "true" in the console when the switch is checked
+    } else {
+        console.log(false); // Print "false" in the console when the switch is unchecked
+        // Append circles when the switch is unchecked
+        createCircles();
+    }
+
+    // Check if the slider background color is red
+    if (toggleSwitch.nextElementSibling.style.backgroundColor === 'red') {
+        // If the slider background color is red, print "red"
+        console.log("red");
+    } else {
+        // If the slider background color is not red, remove circles
+        removeCircles();
+    }
+
+    // Log the toggle count
+    console.log("Toggle count:", toggleCount);
+
+    // Reload the page if toggle count is equal to 3
+    if (toggleCount === 3) {
+        window.location.reload();
+    }
+});
+
+
+            // Add X axis
+            const x = d3.scaleLinear()
+                .domain([0, 250])
+                .range([0, width]);
+
+            svg.append("g")
+                .attr("transform", `translate(0, ${height})`)
+                .call(d3.axisBottom(x));
+
+            // Add Y axis
+            const y = d3.scaleLinear()
+                .domain([3, 4.1]) // i'll make the range for Median GPA Points go from 3 to 4
+                .range([height, 0]);
+
+            svg.append("g")
+                .call(d3.axisLeft(y));
+
+            // Add grid lines
+            svg.append("g")
+                .attr("class", "grid")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x)
+                    .tickSize(-height)
+                    .tickFormat("")
+                );
+
+            svg.append("g")
+                .attr("class", "grid")
+                .call(d3.axisLeft(y)
+                    .tickSize(-width)
+                    .tickFormat("")
+                );
+                   // Add labels for the axes
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("transform", `translate(${width / 2},${height + margin.bottom - 10})`)
+                .text("Number of Enrollments");
+
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("transform", `rotate(-90) translate(${-height / 2},${-margin.left + 20})`)
+                .text("GPA");
+                // Calculate the overall average GPA
+const overallAvgGPA = d3.mean(averagedData, d => +d['Median GPA Points']);
+
+// Add a dashed line for the overall average median GPA
+svg.append("line")
+    .attr("x1", 0)
+    .attr("y1", y(overallAvgGPA))
+    .attr("x2", width)
+    .attr("y2", y(overallAvgGPA))
+    .attr("stroke-dasharray", "5, 5")
+    .attr("stroke", "black")
+    .attr("stroke", "	#C04000") 
+    .attr("stroke-width", 2);
+    
+    // Define categories based on subject areas
+const categories = {
+    Humanities: ['GRK', 'MALS', 'THEA', 'SART', 'FRIT', 'CRWT', 'MUS', 'FILM', 'JWST', 'PHIL', 'ASCL', 'AAAS', 'ENGL', 'REL', 'LACS', 'ARTH', 'LING', 'ENGS', 'MES', 'HIST', 'ENVS', 'CLST'],
+    SocialSciences: ['COGS', 'PSYC', 'GOVT', 'SOC', , 'SOC','PBPL', 'EDUC', 'ECON', 'GEOG', 'WGSS', 'ANTH'],
+    ScienceMath: ['CHEM', 'BIOL', 'PHYS', 'ASTR', 'MATH', 'COSC', 'EARS', 'QSS'],
+    Languages: ['CHIN', 'ITAL', 'SPAN', 'RUSS', 'LATS',  'GERM', 'LAT', 'FREN'],
+    Interdisciplinary: ['WRIT', 'NAS', 'TUCK', 'COGS', 'PBPL', 'INTS']
+};
+categories1 = {
+            'Humanities': ['GRK', 'MALS', 'THEA', 'SART', 'FRIT', 'CRWT', 'MUS', 'FILM', 'JWST', 'PHIL', 'ASCL', 'AAAS', 'ENGL', 'REL', 'LACS', 'ARTH', 'LING', 'ENGS', 'MES', 'HIST', 'ENVS', 'CLST'],
+            'Social Sciences': ['COGS', 'PSYC', 'GOVT', 'SOC', 'SOC','PBPL', 'EDUC', 'ECON', 'GEOG', 'WGSS', 'ANTH'],
+            'Science/ Math': ['CHEM', 'BIOL', 'PHYS', 'ASTR', 'MATH', 'COSC', 'EARS', 'QSS'],
+            'Languages': ['CHIN', 'ITAL', 'SPAN', 'RUSS', 'LATS',  'GERM', 'LAT', 'FREN'],
+            'Interdisciplinary': ['WRIT', 'NAS', 'TUCK', 'COGS', 'PBPL', 'INTS']
+        };
+
+// Define colors for each category
+const categoryColors = {
+    Humanities: 'green',
+    SocialSciences: 'red',
+    ScienceMath: 'blue',
+    Languages: 'purple',
+    Interdisciplinary: 'orange'
+};
+
+
+// Function to get category based on department
+function getCategory(department) {
+    for (const [category, departments] of Object.entries(categories)) {
+        if (departments.includes(department)) {
+            return category;
+        }
+    }
+    return 'Other'; // Default category if department not found
+}
+
+
+            // -1- Create a tooltip div that is hidden by default:
+            const tooltip = d3.select("#my_dataviz")
+                .append("div")
+                .style("opacity", 0)
+                .attr("class", "tooltip")
+                .style("background-color", "black")
+                .style("border-radius", "5px")
+                .style("padding", "10px")
+                .style("color", "white")
+                .style("font-size", "14px"); // I increase font size
+
+            // -2-- Createe 3 functions to show  hide the tooltip
+            const showTooltip = function (event, d) {
+                tooltip
+                    .transition()
+                    .duration(200)
+                    .style("opacity", 1)
+                    .style("left", (event.x + 30) + "px")
+                    .style("top", (event.y + 30) + "px");
+            };
+            const moveTooltip = function (event, d) {
+                tooltip
+                    .html(`Department: ${d.Department}<br>Enrollments: ${d.Enrollments}<br>Median GPA Points: ${d['Median GPA Points']}<br>Quality Rating: ${d.Quality}`)
+                    .style("left", (event.x + 30) + "px")
+                    .style("top", (event.y + 30) + "px");
+            };
+            const hideTooltip = function () {
+                tooltip
+                    .transition()
+                    .duration(200)
+                    .style("opacity", 0);
+            };
+
+            svg.append('g')
+
+  // Function meant to highlight squares of the same color and dull others
+function highlightSquares(color) {
+    // Reduce opacity for all squares
+    svg.selectAll("rect")
+        .style("opacity", 0.1);
+
+    // Highlight squares of the same color
+    svg.selectAll("rect")
+        .filter(d => categoryColors[getCategory(d.Department)] === color)
+        .style("opacity", 1);
+}
+
+// Add squares with size based on Enrollments....
+svg.append('g')
+    .selectAll("rect")
+    .data(averagedData)
+    .join("rect")
+    .attr("class", "bubbles")
+    .attr("x", d => x(+d.Enrollments) - Math.sqrt(d.Enrollments) * 0.9) // Adjust position for squares
+    .attr("y", d => y(+d['Median GPA Points']) - Math.sqrt(d.Enrollments) * 0.9) // Adjust position for squares
+    .attr("width", d => Math.sqrt(d.Enrollments) * 2.3) // Adjust the size based on Enrollments
+    .attr("height", d => Math.sqrt(d.Enrollments) * 2.3) // Adjust the size based on Enrollments
+    .style("fill", d => categoryColors[getCategory(d.Department)]) // Color based on category
+    .style("stroke", d => {
+        // Check if the department is in the top or bottom 10
+        if (top10.map(dep => dep.Department).includes(d.Department)) {
+            return "#39FF14"; // Green outline for top 10
+        } else if (bottom10.map(dep => dep.Department).includes(d.Department)) {
+            return "#8B0000"; // Red outline for bottom 10
+        } else {
+            return "black"; // Default black outline
+        }
+    })
+    .style("opacity", 0.7) // Set initial opacity to 0.7
+    .on("mouseover", function (event, d) {
+        // Set a timer to highlight squares of the same color after 3 seconds
+        const color = categoryColors[getCategory(d.Department)];
+        setTimeout(() => highlightSquares(color), 1);
+        showTooltip(event, d);
+    })
+    .on("mousemove", moveTooltip)
+    .on("mouseleave", function () {
+    // Reset opacity for all squares
+    svg.selectAll("rect")
+        .style("opacity", d => {
+            // Restore opacity based on whether the department is in the top or bottom 10
+            const department = d.Department;
+            if (top10.map(dep => dep.Department).includes(department)) {
+                return 0.7;
+            } else if (bottom10.map(dep => dep.Department).includes(department)) {
+                return 0.7;
+            } else {
+                return 0.7;
+            }
+        });
+    hideTooltip();
+});
+
+    // Calculate the average class size based on Enrollments
+const avgClassSize = d3.mean(averagedData, d => +d.Enrollments);
+
+// Append a vertical dashed line for the average class size
+svg.append("line")
+    .attr("x1", x(avgClassSize))
+    .attr("y1", 0)
+    .attr("x2", x(avgClassSize))
+    .attr("y2", height)
+    .attr("stroke-dasharray", "5, 5")
+    .attr("stroke", "brown")
+    .attr("stroke-width", 2);
+
+            // Calculate the height of the legend based on the number of departments
+            const legendHeight = averagedData.length * 15;
+            // Add legend
+            const legend = svg.append("g")
+                .attr("transform", `translate(${width + 20}, ${margin.top})`);
+
+            const legendScaleFactor = 0.5; // Reduce the size by 50%
+            legend.selectAll("rect")
+                .data(averagedData.map(d => d.Department).reverse()) // Reverse the legend data
+                .enter()
+                .append("rect")
+                .attr("x", 5)
+                .attr("y", (d, i) => i * 10)
+                .attr("width", 10)
+                .attr("height", 15)
+                .style("fill", (d) => {
+                    // Color based on whether it's in the top 10, bottom 10, or neither
+                    if (top10.map(dep => dep.Department).includes(d)) {
+                        return "#5BDB44";
+                    } else if (bottom10.map(dep => dep.Department).includes(d)) {
+                        return "#8B0000";
+                    } else {
+                        return "black";
+                    }
+                });
+
+            legend.append("text")
+                .attr("x", 0)
+                .attr("y", -5)
+                .attr("text-anchor", "start")
+                .style("font-size", "12px")
+                .style("font-weight", "bold")
+                .text("Dartmouth Courses");
+                
+            legend.selectAll("text")
+                .data(averagedData.map(d => d.Department).reverse()) // Reverse the legend data
+                .enter()
+                .append("text")
+                .attr("x", 20)
+                .attr("y", (d, i) => i * 10 + 10)
+                .text(d => d)
+                .attr("text-anchor", "start")
+                .style("alignment-baseline", "middle");
+                
+                // Create legend for categories at the bottom of the page
+                
+const legendCategories = svg.append("g")
+    .attr("transform", `translate(${width+90 }, ${height + margin.top-380})`); // Adjust position of legend
+
+// Append rectangles for each category
+legendCategories.selectAll("rect")
+    .data(Object.keys(categories))
+    .enter()
+    .append("rect")
+    .attr("x", 0)
+    .attr("y", (d, i) => i * 20)
+    .attr("width", 10)
+    .attr("height", 10)
+    .style("fill", d => categoryColors[d]);
+
+// Append text labels for each category
+legendCategories.selectAll("text")
+    .data(Object.keys(categories1))
+    .enter()
+    .append("text")
+    .attr("x", 20)
+    .attr("y", (d, i) => i * 20 + 9)
+    .text(d => d)
+    .style("font-size", "12px")
+    .style("alignment-baseline", "middle");
+
+        });
+       
+        
+    </script>
+
+</body>
+
+</html>
