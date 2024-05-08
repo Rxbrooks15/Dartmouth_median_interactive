@@ -9,3 +9,5 @@ https://github.com/Rxbrooks15/Dartmouth_median_interactive/assets/112977778/cd63
 ![Screenshot (423)](https://github.com/Rxbrooks15/Dartmouth_median_interactive/assets/112977778/e0715e8a-054b-4b89-a739-dae1c48f485e)
 ![Screenshot (426)](https://github.com/Rxbrooks15/Dartmouth_median_interactive/assets/112977778/10b56c0d-50a1-484b-8e36-5b1e3dea677c)
 ![Screenshot (425)](https://github.com/Rxbrooks15/Dartmouth_median_interactive/assets/112977778/2625ebfd-5406-4ba3-a68e-06d05f70561a)
+![Screenshot (427)](https://github.com/Rxbrooks15/Dartmouth_median_interactive/assets/112977778/019a9b0d-5a75-42f7-a843-b907bc6c9cd1)
+![Screenshot (428)](https://github.com/Rxbrooks15/Dartmouth_median_interactive/assets/112977778/5dce9720-71df-41e7-baf2-0e368f7574a5)
