@@ -1,5 +1,5 @@
 
-Note: The top 10 departments by GPA are highlighted in green and the bottom 10 departments are highlighted in red. You should hover over points to read more about the department's information! Dashed line indicates average gpa between all departments.
+Note: The top 10 departments by GPA are highlighted in green and the bottom 10 departments are highlighted in red. You should hover over points to read more about the department's information! Horizontal dashed line indicates average gpa between all departments while the vertical dashed line depicts the average enrollment per department.
 <!DOCTYPE html>
 <html lang="en">
 
@@ -7,7 +7,20 @@ Note: The top 10 departments by GPA are highlighted in green and the bottom 10 d
     <meta charset="utf-8">
     <!-- Load d3.js -->
     <script src="https://d3js.org/d3.v6.js"></script>
-
+    <script src="drop_down.js"></script>
+    <script src="radio.js"></script>
+ 
+    <form id="form" class="btn-group btn-group-toggle" data-toggle="buttons">
+        <label class="btn btn-secondary active">
+          <input type="radio" name="controlHeatmapType" value="MRR" checked>2021<br>
+        </label>
+        <label class="btn btn-secondary">
+          <input type="radio" name="controlHeatmapType" value="LYL">2022<br>
+        </label>
+        <label class="btn btn-third">
+          <input type="radio" name="controlHeatmapType" value="LYY">All<br>
+        </label>
+      </form>
     <style>
         svg {
             background-color: rgb(236, 240, 250);
@@ -110,6 +123,41 @@ Note: The top 10 departments by GPA are highlighted in green and the bottom 10 d
         }
         /*#my_dataviz {
         margin: 200px 100px; /* Adjust the margin values as needed */
+           /* Styles for the dropdown container */
+  #dropdown-container {
+    margin: 20px;
+  }
+
+  /* Styles for the dropdown menu */
+  #d3-dropdown {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  /* Styles for the selected dropdown text */
+  #selected-dropdown {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+    </style>
+    
+  </style>
+</head>
+<body>
+  <div id="dropdown-container">
+    <select id="d3-dropdown" class="dropdown" data-target="dropdown-selected.html">
+      <option value="Button1" data-target="term1.html" class="dropdown-option">GPA and Enrollments Per Term</option>
+      <option value="Button6" data-target="term1.html" class="dropdown-option">Overall GPA and Enrollments</option>
+      <option value="Button2" data-target="term1.html" class="dropdown-option">GPA and Enrollments in Fall</option>
+      <option value="Button3" data-target="term2.html" class="dropdown-option">GPA and Enrollments in Winter</option>
+      <option value="Button4" data-target="term3.html" class="dropdown-option">GPA and Enrollments in Spring</option>
+      <option value="Button5" data-target="term4.html" class="dropdown-option">GPA and Enrollments in Summer</option>
+
+    </select>
+    <p id="selected-dropdown"></p>
     
     </style>
 </head>
@@ -129,7 +177,12 @@ Note: The top 10 departments by GPA are highlighted in green and the bottom 10 d
     </label>
 
     <!-- Where the graph will take place -->
-    <div id="my_dataviz"></div>
+    <div id="my_dataviz">
+
+
+        <!-- Radio button: one choice only -->
+
+    </div>
 
     <script>
  
